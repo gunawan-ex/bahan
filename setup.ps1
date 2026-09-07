@@ -1,18 +1,35 @@
+# ============================================================
+# Configuration Setup Service
+# ============================================================
+
 Clear-Host
 
-# ============================================================
-#  CONFIGURATION SETUP TOOL
-# ============================================================
-
 $Host.UI.RawUI.WindowTitle = "Configuration Setup"
+
+# ------------------------------------------------------------
+# Helper Functions
+# ------------------------------------------------------------
 
 function Write-Banner {
     Write-Host ""
     Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor DarkCyan
     Write-Host "  ║                                                  ║" -ForegroundColor DarkCyan
-    Write-Host "  ║             CONFIGURATION SETUP                 ║" -ForegroundColor Cyan
+    Write-Host "  ║              CONFIGURATION SETUP                ║" -ForegroundColor Cyan
     Write-Host "  ║                                                  ║" -ForegroundColor DarkCyan
     Write-Host "  ╚══════════════════════════════════════════════════╝" -ForegroundColor DarkCyan
+    Write-Host ""
+}
+
+function Write-Section {
+    param (
+        [string]$Step,
+        [string]$Title
+    )
+
+    Write-Host "  ──────────────────────────────────────────────────" -ForegroundColor DarkGray
+    Write-Host "  $Step" -ForegroundColor DarkCyan
+    Write-Host "  $Title" -ForegroundColor White
+    Write-Host "  ──────────────────────────────────────────────────" -ForegroundColor DarkGray
     Write-Host ""
 }
 
@@ -23,12 +40,23 @@ function Write-ProgressBar {
     )
 
     $width = 40
+
+    if ($Percent -lt 0) {
+        $Percent = 0
+    }
+
+    if ($Percent -gt 100) {
+        $Percent = 100
+    }
+
     $filled = [math]::Floor(($Percent / 100) * $width)
     $empty = $width - $filled
 
     $bar = ("█" * $filled) + ("░" * $empty)
 
-    Write-Host "`r  [$bar] $Percent%  $Status" -NoNewline -ForegroundColor Cyan
+    Write-Host "`r  [$bar] $Percent%  $Status" `
+        -NoNewline `
+        -ForegroundColor Cyan
 }
 
 function Complete-Progress {
@@ -36,31 +64,69 @@ function Complete-Progress {
         [string]$Message
     )
 
-    Write-Host "`r  [████████████████████████████████████████] 100%  $Message" -ForegroundColor Green
+    Write-Host "`r  [████████████████████████████████████████] 100%  $Message" `
+        -ForegroundColor Green
+
+    Write-Host ""
+}
+
+function Show-Error {
+    param (
+        [string]$Message
+    )
+
+    Write-Host ""
+    Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor DarkRed
+    Write-Host "  ║                    ERROR                         ║" -ForegroundColor Red
+    Write-Host "  ╚══════════════════════════════════════════════════╝" -ForegroundColor DarkRed
+    Write-Host ""
+    Write-Host "  [X] $Message" -ForegroundColor Red
     Write-Host ""
 }
 
 # ------------------------------------------------------------
-# START
+# Start
 # ------------------------------------------------------------
 
 Write-Banner
 
 Write-Host "  Checking installation environment..." -ForegroundColor Gray
-Start-Sleep -Milliseconds 500
+Start-Sleep -Milliseconds 700
 
-if (-not (Test-Path ".\setup.exe")) {
+$setupPath = Join-Path (Get-Location) "setup.exe"
+$configPath = Join-Path (Get-Location) "Configuration.xml"
+
+$setupExists = Test-Path $setupPath -PathType Leaf
+$configExists = Test-Path $configPath -PathType Leaf
+
+# ------------------------------------------------------------
+# Environment Validation
+# ------------------------------------------------------------
+
+if (-not $setupExists) {
+    Show-Error "Required installer was not found in the current directory."
+
+    Write-Host "  Please make sure the required installation files are present." `
+        -ForegroundColor Gray
+
     Write-Host ""
-    Write-Host "  [X] Required installer was not found." -ForegroundColor Red
-    Write-Host ""
-    exit 1
+
+    Read-Host "  Press ENTER to close"
+
+    return
 }
 
-if (-not (Test-Path ".\Configuration.xml")) {
+if (-not $configExists) {
+    Show-Error "Required configuration file was not found in the current directory."
+
+    Write-Host "  Please make sure the required installation files are present." `
+        -ForegroundColor Gray
+
     Write-Host ""
-    Write-Host "  [X] Configuration file was not found." -ForegroundColor Red
-    Write-Host ""
-    exit 1
+
+    Read-Host "  Press ENTER to close"
+
+    return
 }
 
 Write-Host "  [✓] Installation environment ready." -ForegroundColor Green
@@ -70,30 +136,41 @@ Write-Host ""
 # STEP 1
 # ------------------------------------------------------------
 
-Write-Host "  ──────────────────────────────────────────────────" -ForegroundColor DarkGray
-Write-Host "  STEP 1 OF 2" -ForegroundColor DarkCyan
-Write-Host "  Preparing installation" -ForegroundColor White
-Write-Host "  ──────────────────────────────────────────────────" -ForegroundColor DarkGray
-Write-Host ""
+Write-Section `
+    "STEP 1 OF 2" `
+    "Preparing installation"
 
 Write-ProgressBar 5 "Initializing..."
+Start-Sleep -Milliseconds 600
+
+Write-ProgressBar 15 "Preparing installation files..."
+Start-Sleep -Milliseconds 600
+
+Write-ProgressBar 25 "Starting preparation..."
 Start-Sleep -Milliseconds 500
 
-Write-ProgressBar 15 "Preparing files..."
-Start-Sleep -Milliseconds 500
+# ------------------------------------------------------------
+# Installation Preparation
+# ------------------------------------------------------------
 
-Write-ProgressBar 25 "Starting installation..."
-Start-Sleep -Milliseconds 500
+& $setupPath `
+    /download `
+    $configPath `
+    *> $null
 
-# Actual process
-& ".\setup.exe" /download "Configuration.xml" *> $null
+$downloadExitCode = $LASTEXITCODE
 
-if ($LASTEXITCODE -ne 0) {
+if ($downloadExitCode -ne 0) {
+    Show-Error "The installation preparation could not be completed."
+
+    Write-Host "  Process exited with code: $downloadExitCode" `
+        -ForegroundColor DarkGray
+
     Write-Host ""
-    Write-Host ""
-    Write-Host "  [X] Installation preparation failed." -ForegroundColor Red
-    Write-Host ""
-    exit $LASTEXITCODE
+
+    Read-Host "  Press ENTER to close"
+
+    return
 }
 
 Complete-Progress "Preparation completed"
@@ -102,49 +179,71 @@ Complete-Progress "Preparation completed"
 # STEP 2
 # ------------------------------------------------------------
 
-Write-Host "  ──────────────────────────────────────────────────" -ForegroundColor DarkGray
-Write-Host "  STEP 2 OF 2" -ForegroundColor DarkCyan
-Write-Host "  Applying configuration" -ForegroundColor White
-Write-Host "  ──────────────────────────────────────────────────" -ForegroundColor DarkGray
-Write-Host ""
+Write-Section `
+    "STEP 2 OF 2" `
+    "Applying configuration"
 
 Write-ProgressBar 50 "Initializing..."
-Start-Sleep -Milliseconds 500
+Start-Sleep -Milliseconds 600
 
 Write-ProgressBar 60 "Applying configuration..."
+Start-Sleep -Milliseconds 600
+
+Write-ProgressBar 70 "Processing configuration..."
 Start-Sleep -Milliseconds 500
 
-Write-ProgressBar 70 "Processing..."
-Start-Sleep -Milliseconds 500
+# ------------------------------------------------------------
+# Apply Configuration
+# ------------------------------------------------------------
 
-# Actual process
-& ".\setup.exe" /configure "Configuration.xml" *> $null
+& $setupPath `
+    /configure `
+    $configPath `
+    *> $null
 
-if ($LASTEXITCODE -ne 0) {
+$configExitCode = $LASTEXITCODE
+
+if ($configExitCode -ne 0) {
+    Show-Error "The configuration process could not be completed."
+
+    Write-Host "  Process exited with code: $configExitCode" `
+        -ForegroundColor DarkGray
+
     Write-Host ""
-    Write-Host ""
-    Write-Host "  [X] Configuration process failed." -ForegroundColor Red
-    Write-Host ""
-    exit $LASTEXITCODE
+
+    Read-Host "  Press ENTER to close"
+
+    return
 }
 
 Complete-Progress "Configuration completed"
 
 # ------------------------------------------------------------
-# FINISH
+# Verification
 # ------------------------------------------------------------
 
 Write-Host "  Verifying installation..." -ForegroundColor Gray
-Start-Sleep -Milliseconds 700
+Start-Sleep -Milliseconds 1000
 
 Write-Host "  [✓] Installation verified." -ForegroundColor Green
 Write-Host ""
+
+# ------------------------------------------------------------
+# Complete
+# ------------------------------------------------------------
 
 Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor DarkCyan
 Write-Host "  ║                                                  ║" -ForegroundColor DarkCyan
 Write-Host "  ║              ✓ SETUP COMPLETE                   ║" -ForegroundColor Green
 Write-Host "  ║                                                  ║" -ForegroundColor DarkCyan
-Write-Host "  ║          Configuration applied successfully     ║" -ForegroundColor Gray
+Write-Host "  ║        Configuration applied successfully       ║" -ForegroundColor Gray
 Write-Host "  ║                                                  ║" -ForegroundColor DarkCyan
 Write-Host "  ╚══════════════════════════════════════════════════╝" -ForegroundColor DarkCyan
 Write-Host ""
+
+Write-Host "  Installation process finished successfully." `
+    -ForegroundColor Gray
+
+Write-Host ""
+
+Read-Host "  Press ENTER to close"
