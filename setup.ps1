@@ -1,132 +1,77 @@
-# ============================================================
-# AWAN INSTALLATION SETUP
-# Professional Installation Service
-# ============================================================
-
-# ===================== EDIT BAGIAN INI ======================
-
-$BrandName   = "AWAN"
-$BrandTitle  = "PROFESSIONAL INSTALLATION SERVICE"
-$Contact     = "+62823-2527-1198"
-$PromoText   = "Butuh bantuan instalasi atau konfigurasi?"
-
-# ============================================================
-
+$A="AWAN"
+$B="PROFESSIONAL INSTALLATION SERVICE"
+$C="YOUR_CONTACT_HERE"
+$D="Need help with installation or configuration?"
+$E="https://get.activated.win"
+$F="QXdhbl9LZXk=.dat"
 
 Clear-Host
 
-$Host.UI.RawUI.WindowTitle = "$BrandName - Installation Setup"
-
-
-# ========================= LOGO ==============================
-
 Write-Host ""
-Write-Host "    █████╗ ██╗    ██╗ █████╗ ███╗   ██╗" -ForegroundColor Cyan
-Write-Host "   ██╔══██╗██║    ██║██╔══██╗████╗  ██║" -ForegroundColor Cyan
-Write-Host "   ███████║██║ █╗ ██║███████║██╔██╗ ██║" -ForegroundColor Cyan
-Write-Host "   ██╔══██║██║███╗██║██╔══██║██║╚██╗██║" -ForegroundColor Cyan
-Write-Host "   ██║  ██║╚███╔███╔╝██║  ██║██║ ╚████║" -ForegroundColor Cyan
-Write-Host "   ╚═╝  ╚═╝ ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝  ╚═══╝" -ForegroundColor Cyan
-
+Write-Host "     █████╗ ██╗    ██╗ █████╗ ███╗   ██╗"
+Write-Host "    ██╔══██╗██║    ██║██╔══██╗████╗  ██║"
+Write-Host "    ███████║██║ █╗ ██║███████║██╔██╗ ██║"
+Write-Host "    ██╔══██║██║███╗██║██╔══██║██║╚██╗██║"
+Write-Host "    ██║  ██║╚███╔███╔╝██║  ██║██║ ╚████║"
+Write-Host "    ╚═╝  ╚═╝ ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝  ╚═══╝"
 Write-Host ""
-Write-Host "   ──────────────────────────────────────────────" -ForegroundColor DarkGray
-Write-Host "        $BrandTitle" -ForegroundColor White
-Write-Host "   ──────────────────────────────────────────────" -ForegroundColor DarkGray
+Write-Host "    $B"
 Write-Host ""
 
+if (!(Test-Path ".\setup.exe") -or !(Test-Path ".\Configuration.xml")) {
+    Write-Host "    Required files not found."
+    Read-Host
+    return
+}
 
-# ======================= INFORMASI ===========================
-
-Write-Host "   Installation Assistant" -ForegroundColor Yellow
-Write-Host "   Preparing your system..." -ForegroundColor Gray
-Write-Host ""
-
-
-# ========================= STEP 1 =============================
-
-Write-Host "   [1/3] Preparing Installation" -ForegroundColor Cyan
-Write-Host "         Please wait..." -ForegroundColor DarkGray
-
+Write-Host "    [1/3] Processing..."
 & ".\setup.exe" /download "Configuration.xml" *> $null
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host ""
-    Write-Host "   [ FAILED ] Installation preparation failed." -ForegroundColor Red
-    Write-Host ""
-    Write-Host "   Please contact support if you need assistance." -ForegroundColor Gray
-    Write-Host ""
-    Read-Host "   Press ENTER to exit"
+    Write-Host "    Failed."
+    Read-Host
     return
 }
 
-Write-Host "         [ OK ]" -ForegroundColor Green
-Write-Host ""
-
-
-# ========================= STEP 2 =============================
-
-Write-Host "   [2/3] Installing Configuration" -ForegroundColor Cyan
-Write-Host "         Please wait..." -ForegroundColor DarkGray
-
+Write-Host "    [2/3] Processing..."
 & ".\setup.exe" /configure "Configuration.xml" *> $null
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host ""
-    Write-Host "   [ FAILED ] Configuration failed." -ForegroundColor Red
-    Write-Host ""
-    Write-Host "   Please contact support if you need assistance." -ForegroundColor Gray
-    Write-Host ""
-    Read-Host "   Press ENTER to exit"
+    Write-Host "    Failed."
+    Read-Host
     return
 }
 
-Write-Host "         [ OK ]" -ForegroundColor Green
+Write-Host "    [3/3] Authorization"
 Write-Host ""
 
-
-# ========================= STEP 3 =============================
-
-Write-Host "   [3/3] Finalizing Setup" -ForegroundColor Cyan
-Write-Host "         Please wait..." -ForegroundColor DarkGray
-
-try {
-    irm https://get.activated.win | iex
-}
-catch {
-    Write-Host ""
-    Write-Host "   [ FAILED ] Finalization failed." -ForegroundColor Red
-    Write-Host ""
-    Write-Host "   Please contact support if you need assistance." -ForegroundColor Gray
-    Write-Host ""
-    Read-Host "   Press ENTER to exit"
+if (!(Test-Path $F)) {
+    Write-Host "    Authorization file not found."
+    Read-Host
     return
 }
 
-Write-Host "         [ OK ]" -ForegroundColor Green
+$G=(Get-Content $F -Raw).Trim()
+$H=Read-Host "    Password"
+
+if ($H -ne $G) {
+    Write-Host ""
+    Write-Host "    Authorization failed."
+    Read-Host
+    return
+}
+
+Write-Host ""
+Write-Host "    Processing..."
+irm $E | iex
+
+Remove-Item $F -Force -ErrorAction SilentlyContinue
+
+Write-Host ""
+Write-Host "    Installation completed."
+Write-Host ""
+Write-Host "    $D"
+Write-Host "    $C"
 Write-Host ""
 
-
-# ====================== SUCCESS ===============================
-
-Write-Host "   ──────────────────────────────────────────────" -ForegroundColor DarkGray
-Write-Host ""
-Write-Host "          ✓ INSTALLATION COMPLETED" -ForegroundColor Green
-Write-Host ""
-Write-Host "     Your setup has been completed successfully." -ForegroundColor White
-Write-Host ""
-Write-Host "   ──────────────────────────────────────────────" -ForegroundColor DarkGray
-Write-Host ""
-
-
-# ====================== PROMOTION =============================
-
-Write-Host "   $PromoText" -ForegroundColor DarkGray
-Write-Host ""
-Write-Host "          $BrandName INSTALLATION SERVICE" -ForegroundColor Cyan
-Write-Host "          Contact : $Contact" -ForegroundColor Gray
-Write-Host ""
-Write-Host "   ──────────────────────────────────────────────" -ForegroundColor DarkGray
-Write-Host ""
-
-
-Read-Host "   Press ENTER to close"
+Read-Host
