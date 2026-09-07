@@ -7,9 +7,8 @@
 
 $BrandName   = "AWAN"
 $BrandTitle  = "PROFESSIONAL INSTALLATION SERVICE"
-$Contact     = "YOUR_CONTACT_HERE"
+$Contact     = "+62823-2527-1198"
 $PromoText   = "Butuh bantuan instalasi atau konfigurasi?"
-$Step3Url    = "https://GANTI-DENGAN-URL-ANDA"
 
 # ============================================================
 
